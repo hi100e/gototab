@@ -1,0 +1,30 @@
+
+.main-container {
+	background-color: #FFFDFA;
+
+}
+
+.todo-card {
+	position: fixed;
+        right: 10px;
+        bottom: 10px;	
+        text-align: right;
+	width: 240px;
+	height: 340px;
+        padding: 5px;
+	
+}
+.todo-card textarea {
+	background-color: #ffffba;
+	opacity: 0.8;
+	background-image: radial-gradient(#000000 0.5px, #ffffba 0.5px);
+	background-size: 10px 10px;
+	border: 1px;
+	border-radius: 5px;
+	width: 240px;
+	height: 340px;
+	border-style: dashed;
+	padding: 2px 3px;
+	font-size: large;
+	resize: none;
+}
