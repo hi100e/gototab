@@ -98,7 +98,8 @@
 		// 	w=tab;
 		// }
 		//Note: use _blank always for nwo as .focus is ignored by safari
-		w = w.open(url, "_blank","noreferrer,popup=0");
+		//w = w.open(url, "_blank","noreferrer"); does not work in safari14 https://discussions.apple.com/thread/253020466
+		w = w.open(url, "_blank");
 		w.focus();
 		if (window.srch.recent[target]) {
 			//same search was done recently, remove it and
