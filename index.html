@@ -31,13 +31,13 @@
 			<textarea id="todoNotes" oninput="saveTodos();"></textarea>
 		</div>
 	</h1>
-	
+
 	<div id="latest" ondblclick="clearRecents();" style="z-index: 0;">
-	<span style=" text-align: left;">
-		<p></p>
-		
-		<div id="latestSearches">
-		</div>
+		<span style=" text-align: left;">
+			<p></p>
+
+			<div id="latestSearches">
+			</div>
 
 		</span>
 
@@ -64,66 +64,55 @@
 		}
 		);
 	}
-function doSearch(engineId, target) {
-    let q = document.getElementById('q').value;
-    if (!q) return;
+	function doSearch(engineId, target) {
 
-    let engine = window.srch.engines[engineId];
-    if (!engine) return;
 
-    // Open the tab IMMEDIATELY in the click handler
-    let tempUrl = "about:blank"; // Safari allows this immediately
-    let w = window.open(tempUrl, "_blank");
+		let q = document.getElementById('q').value;
+		if (!q) {
+			return;
+		}
+		doQuery(engineId, target, q);
+
+	}
+	function doQuery(engineId, target, q) {
+
+		if (!q) {
+			return;
+		}
+		let engine = window.srch.engines[engineId];
+		if (!engine) {
+			//ignore
+			return
+		}
+
+	 let url = `https://${engine}`.replace("${Q}", encodeURIComponent(q));
     
-    if (!w) {
-        // Fallback if popup blocked
-        alert("Please allow popups for this site");
-        return;
-    }
-
-    // Now build the real URL and navigate
-    let url = `https://${engine}`.replace("${Q}", encodeURIComponent(q));
-    
-    // Navigate the already-opened tab to the real URL
-    w.location.href = url;
-    w.focus();
-
-    // Handle recent searches (async hash generation won't affect the popup now)
-    digestMessage(`${engineId}${q}`).then(hash => {
-        let finalTarget = "goto_" + hash;
-        updateRecent(finalTarget, engineId, q);
-    }).catch(() => {
-        updateRecent("_blank", engineId, q);
-    });
-}
-
-function updateRecent(target, engineId, q) {
-    if (window.srch.recent[target]) {
-        delete window.srch.recent[target];
-    }
-    window.srch.recent[target] = {
-        "engineId": engineId,
-        "q": q,
-        "ts": Date.now()
-    };
-    refreshRecents();
-}
-
-// Remove the async from doQuery since we're not using it anymore
-function doQuery(engineId, target, q) {
-    if (!q) return;
-    
-    let engine = window.srch.engines[engineId];
-    if (!engine) return;
-    
-    let url = `https://${engine}`.replace("${Q}", encodeURIComponent(q));
-    
-    // Open immediately - this is for the recent searches double-click
+    // Open immediately - no async delays
+	// avoid popup blockers
     let w = window.open(url, "_blank");
     if (w) w.focus();
-    
-    updateRecent(target || "_blank", engineId, q);
-}
+
+	updateRecent(url, engineId,q)	
+
+	}
+
+	function updateRecent(target,engineId,q) {
+		if (!target) {
+			console.error("target is null. should not happen");
+			return;
+		}
+
+		if (window.srch.recent[target]) {
+			//same search was done recently, remove it and
+			//add it again so its on the top of the list
+			delete window.srch.recent[target];
+		}
+		let ts = Date.name;
+		window.srch.recent[target] = { "engineId": engineId, "q": q, "ts": ts };
+
+		//refresh recent
+		refreshRecents();
+	}
 
 	function clearRecents() {
 		window.srch.recent = {};
@@ -137,31 +126,31 @@ function doQuery(engineId, target, q) {
 			recents.push(item);
 		}
 		let recentHtml = "";
-		if (recents.length>0){
+		if (recents.length > 0) {
 			recentHtml = `<strong>Latest:</strong><lo>`;
 			//in reverse,  most recent first
 			for (let i = recents.length - 1; i >= 0; i--) {
 				recentHtml += recents[i];
-				}
-		recentHtml += "</lo>"
+			}
+			recentHtml += "</lo>"
 		}
-		
+
 		let recentList = document.getElementById('latestSearches');
 		recentList.innerHTML = recentHtml;
 	}
 
-	async function loadTodos(){
-		let todos=localStorage.getItem("gototab_todos");
+	async function loadTodos() {
+		let todos = localStorage.getItem("gototab_todos");
 		let todoElem = document.getElementById('todoNotes');
 		if (todos && todoElem) {
-			todoElem.value=todos;
+			todoElem.value = todos;
 		}
 	}
-	async function saveTodos() { 
-		
+	async function saveTodos() {
+
 		let todoElem = document.getElementById('todoNotes');
 		if (todoElem) {
-			localStorage.setItem("gototab_todos",todoElem.value);
+			localStorage.setItem("gototab_todos", todoElem.value);
 		}
 	}
 
@@ -172,11 +161,11 @@ function doQuery(engineId, target, q) {
 		window.srch.engines = {};
 		window.srch.engines["DuckDuckGo"] = "duckduckgo.com?q=${Q}";
 		window.srch.engines["Google"] = "google.com/search?q=${Q}";
-		window.srch.engines["StackOverflow"] = "duckduckgo.com?q=!sod ${Q}";
-		window.srch.engines["Wikipedia"] = "en.wikipedia.org/w/index.php?fulltext=1&search=${Q}&ns0=1";
 		window.srch.engines["YouTube"] = "www.youtube.com/results?search_query=${Q}";
 		window.srch.engines["LinkedIn"] = "www.linkedin.com/search/results/all/?keywords=${Q}";
 		window.srch.engines["Google Maps"] = "www.google.co.uk/maps/search/${Q}";
+		window.srch.engines["StackOverflow"] = "duckduckgo.com?q=!sod ${Q}";
+		window.srch.engines["Wikipedia"] = "en.wikipedia.org/w/index.php?fulltext=1&search=${Q}&ns0=1";
 
 		window.srch.defaultEngine = "DuckDuckGo";
 
