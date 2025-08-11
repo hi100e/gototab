@@ -64,55 +64,66 @@
 		}
 		);
 	}
-	async function doSearch(engineId, target) {
+function doSearch(engineId, target) {
+    let q = document.getElementById('q').value;
+    if (!q) return;
 
+    let engine = window.srch.engines[engineId];
+    if (!engine) return;
 
-		let q = document.getElementById('q').value;
-		if (!q) {
-			return;
-		}
-		await doQuery(engineId, target, q);
+    // Open the tab IMMEDIATELY in the click handler
+    let tempUrl = "about:blank"; // Safari allows this immediately
+    let w = window.open(tempUrl, "_blank");
+    
+    if (!w) {
+        // Fallback if popup blocked
+        alert("Please allow popups for this site");
+        return;
+    }
 
-	}
-	async function doQuery(engineId, target, q) {
+    // Now build the real URL and navigate
+    let url = `https://${engine}`.replace("${Q}", encodeURIComponent(q));
+    
+    // Navigate the already-opened tab to the real URL
+    w.location.href = url;
+    w.focus();
 
-		if (!q) {
-			return;
-		}
-		let engine = window.srch.engines[engineId];
-		if (!engine) {
-			//ignore
-			return
-		}
-		let url = `https://${engine}`.replace("${Q}", q);
-		if (!target) {
-			//target = "_blank";
-			let text = engine + q;
-			target = await digestMessage(text);
-			target = "goto_" + target;
-		}
+    // Handle recent searches (async hash generation won't affect the popup now)
+    digestMessage(`${engineId}${q}`).then(hash => {
+        let finalTarget = "goto_" + hash;
+        updateRecent(finalTarget, engineId, q);
+    }).catch(() => {
+        updateRecent("_blank", engineId, q);
+    });
+}
 
-		let tab = window.srch.tabs[target];
-		let w = window;
-		// if (tab) {
-		// 	w=tab;
-		// }
-		//Note: use _blank always for nwo as .focus is ignored by safari
-		//w = w.open(url, "_blank","noreferrer"); does not work in safari14 https://discussions.apple.com/thread/253020466
-		w = w.open(url, "_blank");
-		w.focus();
-		if (window.srch.recent[target]) {
-			//same search was done recently, remove it and
-			//add it again so its on the top of the list
-			delete window.srch.recent[target];
-		}
-		let ts = Date.name;
-		window.srch.recent[target] = { "engineId": engineId, "q": q, "ts": ts };
+function updateRecent(target, engineId, q) {
+    if (window.srch.recent[target]) {
+        delete window.srch.recent[target];
+    }
+    window.srch.recent[target] = {
+        "engineId": engineId,
+        "q": q,
+        "ts": Date.now()
+    };
+    refreshRecents();
+}
 
-		//refresh recent
-		refreshRecents();
-
-	}
+// Remove the async from doQuery since we're not using it anymore
+function doQuery(engineId, target, q) {
+    if (!q) return;
+    
+    let engine = window.srch.engines[engineId];
+    if (!engine) return;
+    
+    let url = `https://${engine}`.replace("${Q}", encodeURIComponent(q));
+    
+    // Open immediately - this is for the recent searches double-click
+    let w = window.open(url, "_blank");
+    if (w) w.focus();
+    
+    updateRecent(target || "_blank", engineId, q);
+}
 
 	function clearRecents() {
 		window.srch.recent = {};
@@ -165,6 +176,7 @@
 		window.srch.engines["Wikipedia"] = "en.wikipedia.org/w/index.php?fulltext=1&search=${Q}&ns0=1";
 		window.srch.engines["YouTube"] = "www.youtube.com/results?search_query=${Q}";
 		window.srch.engines["LinkedIn"] = "www.linkedin.com/search/results/all/?keywords=${Q}";
+		window.srch.engines["Google Maps"] = "www.google.co.uk/maps/search/${Q}";
 
 		window.srch.defaultEngine = "DuckDuckGo";
 
